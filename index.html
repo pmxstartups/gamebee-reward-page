@@ -1,170 +1,155 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gamebee Secret Drop</title>
-    <!-- Google tag (gtag.js) -->
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=G-LRKLRFBT0V"
-    ></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      gtag("js", new Date());
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gamebee Secret Drop</title>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-LRKLRFBT0V"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-LRKLRFBT0V');
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { getAnalytics, isSupported } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-analytics.js";
 
-      gtag("config", "G-LRKLRFBT0V");
-    </script>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        background: linear-gradient(135deg, #fff8e1, #ffe082);
-        padding: 2rem;
-      }
-      .card {
-        background: #fff;
-        padding: 2rem;
-        border-radius: 1rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        max-width: 400px;
-        margin: auto;
-      }
-      .discount {
-        font-size: 2rem;
-        color: #ffca28;
-        font-weight: bold;
-      }
-      .code {
-        margin-top: 1rem;
-        font-size: 1.2rem;
-        color: #333;
-      }
-      .btn {
-        margin-top: 2rem;
-        background: #ffca28;
-        color: #000;
-        padding: 0.8rem 1.2rem;
-        border: none;
-        border-radius: 0.5rem;
-        font-weight: bold;
-        cursor: pointer;
-        text-decoration: none;
-        display: inline-block;
-      }
-      .message {
-        font-size: 1.2rem;
-        color: #e53935;
-        font-weight: bold;
-        margin-top: 1rem;
-      }
-      canvas {
-        position: fixed;
-        top: 0;
-        left: 0;
-        pointer-events: none;
-        z-index: 9999;
-      }
-    </style>
-  </head>
-  <body>
-    <canvas id="confetti-canvas"></canvas>
-    <div class="card" id="reward-card">
-      <h2 id="title">🎉 You've Unlocked a Gamebee Drop!</h2>
-      <div id="discount" class="discount"></div>
-      <div id="code" class="code"></div>
-      <a href="#" class="btn" id="btn">Grab your Offer</a>
-      <p id="message" class="message">Screenshot And Send it to Us</p>
-      <div id="message" class="message"></div>
-    </div>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBRhAVD_SQAKaMKIOiEynhMnQsg0acp4z0",
+      authDomain: "game-bee-reward.firebaseapp.com",
+      projectId: "game-bee-reward",
+      storageBucket: "game-bee-reward.firebasestorage.app",
+      messagingSenderId: "106940026019",
+      appId: "1:106940026019:web:b33b6c6ee0c15b4482c316",
+      measurementId: "G-XYJS3XKYGD"
+    };
 
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-    <script>
-      const rewardCard = document.getElementById("reward-card");
-      const discountText = document.getElementById("discount");
-      const codeText = document.getElementById("code");
-      const messageText = document.getElementById("message");
-      const titleText = document.getElementById("title");
-      const button = document.getElementById("btn");
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-      function launchConfetti() {
+    // Initialize analytics only if supported
+    if (await isSupported()) {
+      getAnalytics(app);
+    }
+
+    const fpPromise = FingerprintJS.load();
+
+    (async function () {
+      const fp = await fpPromise;
+      const result = await fp.get();
+      const visitorId = result.visitorId;
+
+      const docRef = doc(db, "claims", visitorId);
+      const docSnap = await getDoc(docRef);
+
+      const discountText = document.getElementById('discount');
+      const codeText = document.getElementById('code');
+      const messageText = document.getElementById('message');
+      const titleText = document.getElementById('title');
+      const button = document.getElementById('btn');
+
+      if (docSnap.exists()) {
+        discountText.style.display = 'none';
+        codeText.style.display = 'none';
+        button.style.display = 'none';
+        titleText.textContent = '👀 One Time Only!';
+        messageText.textContent = 'Sorry, only one reward per player.';
+      } else {
+        const discounts = [
+          { amount: '5%', code: 'GAME5' },
+          { amount: '10%', code: 'GAME10' },
+          { amount: '15%', code: 'GAME15' },
+          { amount: '🎯 20% JACKPOT!', code: 'GAME20' }
+        ];
+        const selected = discounts[Math.floor(Math.random() * discounts.length)];
+
+        discountText.textContent = `You won ${selected.amount} OFF!`;
+        codeText.textContent = `Use Code: ${selected.code}`;
+
+        const message = encodeURIComponent(`Hey, I just unlocked a discount! My code is ${selected.code}`);
+        const whatsappLink = `https://wa.me/918139095325?text=${message}`;
+        button.setAttribute('href', whatsappLink);
+
+        await setDoc(docRef, {
+          code: selected.code,
+          timestamp: new Date().toISOString()
+        });
+
         confetti({
           particleCount: 120,
           spread: 80,
           origin: { y: 0.6 },
-          colors: ["#ffca28", "#000000", "#ffc107", "#fdd835"],
+          colors: ['#ffca28', '#000000', '#ffc107', '#fdd835']
         });
       }
+    })();
+  </script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: linear-gradient(135deg, #fff8e1, #ffe082);
+      padding: 2rem;
+    }
+    .card {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      max-width: 400px;
+      margin: auto;
+    }
+    .discount {
+      font-size: 2rem;
+      color: #ffca28;
+      font-weight: bold;
+    }
+    .code {
+      margin-top: 1rem;
+      font-size: 1.2rem;
+      color: #333;
+    }
+    .btn {
+      margin-top: 2rem;
+      background: #ffca28;
+      color: #000;
+      padding: 0.8rem 1.2rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .message {
+      font-size: 1.2rem;
+      color: #e53935;
+      font-weight: bold;
+      margin-top: 1rem;
+    }
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 9999;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="confetti-canvas"></canvas>
+  <div class="card" id="reward-card">
+    <h2 id="title">🎉 You've Unlocked a Gamebee Drop!</h2>
+    <div id="discount" class="discount"></div>
+    <div id="code" class="code"></div>
+    <a href="#" class="btn" id="btn">Grab your Offer</a>
+    <p id="message" class="message">Screenshot And Send it to Us </p>
+  </div>
 
-      function setCookie(name, value, days) {
-        const expires = new Date(Date.now() + days * 864e5).toUTCString();
-        document.cookie =
-          name +
-          "=" +
-          encodeURIComponent(value) +
-          "; expires=" +
-          expires +
-          "; path=/";
-      }
-
-      function getCookie(name) {
-        return document.cookie.split("; ").reduce((r, v) => {
-          const parts = v.split("=");
-          return parts[0] === name ? decodeURIComponent(parts[1]) : r;
-        }, "");
-      }
-
-      async function getIP() {
-        try {
-          const res = await fetch("https://api.ipify.org?format=json");
-          const data = await res.json();
-          return data.ip;
-        } catch {
-          return null;
-        }
-      }
-
-      (async function () {
-        const ip = await getIP();
-        const claimed =
-          localStorage.getItem("hasScanned") ||
-          getCookie("claimed") ||
-          sessionStorage.getItem(ip);
-
-        if (claimed) {
-          discountText.style.display = "none";
-          codeText.style.display = "none";
-          button.style.display = "none";
-          titleText.textContent = "👀 One Time Only!";
-          messageText.textContent = "Sorry, only one reward per player.";
-        } else {
-          const discounts = [
-            { amount: "5%", code: "GAME5" },
-            { amount: "10%", code: "GAME10" },
-            { amount: "15%", code: "GAME15" },
-            { amount: "🎯 20% JACKPOT!", code: "GAME20" },
-          ];
-          const selected =
-            discounts[Math.floor(Math.random() * discounts.length)];
-          discountText.textContent = `You won ${selected.amount} OFF!`;
-          codeText.textContent = `Use Code: ${selected.code}`;
-
-          const message = encodeURIComponent(
-            `Hey, I just unlocked a discount! My code is ${selected.code}`
-          );
-          const whatsappLink = `https://wa.me/918139095325?text=${message}`;
-          button.setAttribute("href", whatsappLink);
-
-          localStorage.setItem("hasScanned", "true");
-          setCookie("claimed", "true", 365);
-          sessionStorage.setItem(ip, "true");
-
-          launchConfetti();
-        }
-      })();
-    </script>
-  </body>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+</body>
 </html>
