@@ -22,14 +22,15 @@
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
       import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-      const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_PROJECT_ID.appspot.com",
-        messagingSenderId: "YOUR_SENDER_ID",
-        appId: "YOUR_APP_ID",
-      };
+const firebaseConfig = {
+  apiKey: "AIzaSyBRhAVD_SQAKaMKIOiEynhMnQsg0acp4z0",
+  authDomain: "game-bee-reward.firebaseapp.com",
+  projectId: "game-bee-reward",
+  storageBucket: "game-bee-reward.firebasestorage.app",
+  messagingSenderId: "106940026019",
+  appId: "1:106940026019:web:b33b6c6ee0c15b4482c316",
+  measurementId: "G-XYJS3XKYGD"
+};
 
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
