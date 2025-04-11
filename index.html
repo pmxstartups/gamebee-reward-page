@@ -15,22 +15,26 @@
         dataLayer.push(arguments);
       }
       gtag("js", new Date());
-
       gtag("config", "G-LRKLRFBT0V");
     </script>
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-      import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+      import {
+        getFirestore,
+        doc,
+        setDoc,
+        getDoc
+      } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBRhAVD_SQAKaMKIOiEynhMnQsg0acp4z0",
-  authDomain: "game-bee-reward.firebaseapp.com",
-  projectId: "game-bee-reward",
-  storageBucket: "game-bee-reward.firebasestorage.app",
-  messagingSenderId: "106940026019",
-  appId: "1:106940026019:web:b33b6c6ee0c15b4482c316",
-  measurementId: "G-XYJS3XKYGD"
-};
+      const firebaseConfig = {
+        apiKey: "AIzaSyBRhAVD_SQAKaMKIOiEynhMnQsg0acp4z0",
+        authDomain: "game-bee-reward.firebaseapp.com",
+        projectId: "game-bee-reward",
+        storageBucket: "game-bee-reward.firebasestorage.app",
+        messagingSenderId: "106940026019",
+        appId: "1:106940026019:web:b33b6c6ee0c15b4482c316",
+        measurementId: "G-XYJS3XKYGD"
+      };
 
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
@@ -40,6 +44,7 @@ const firebaseConfig = {
           const userAgent = navigator.userAgent;
           const platform = navigator.platform;
           const timestamp = new Date().toISOString();
+
           await setDoc(doc(db, "scans", ip), {
             ip,
             userAgent,
@@ -52,7 +57,14 @@ const firebaseConfig = {
         }
       }
 
+      async function checkIfScanned(ip) {
+        const docRef = doc(db, "scans", ip);
+        const docSnap = await getDoc(docRef);
+        return docSnap.exists();
+      }
+
       window.saveDeviceDetails = saveDeviceDetails;
+      window.checkIfScanned = checkIfScanned;
     </script>
     <style>
       body {
@@ -135,18 +147,6 @@ const firebaseConfig = {
         });
       }
 
-      function setCookie(name, value, days) {
-        const expires = new Date(Date.now() + days * 864e5).toUTCString();
-        document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
-      }
-
-      function getCookie(name) {
-        return document.cookie.split("; ").reduce((r, v) => {
-          const parts = v.split("=");
-          return parts[0] === name ? decodeURIComponent(parts[1]) : r;
-        }, "");
-      }
-
       async function getIP() {
         try {
           const res = await fetch("https://api.ipify.org?format=json");
@@ -159,12 +159,14 @@ const firebaseConfig = {
 
       (async function () {
         const ip = await getIP();
-        const claimed =
-          localStorage.getItem("hasScanned") ||
-          getCookie("claimed") ||
-          sessionStorage.getItem(ip);
+        if (!ip) {
+          messageText.textContent = "Could not determine your IP. Please try again.";
+          return;
+        }
 
-        if (claimed) {
+        const alreadyClaimed = await window.checkIfScanned(ip);
+
+        if (alreadyClaimed) {
           discountText.style.display = "none";
           codeText.style.display = "none";
           button.style.display = "none";
@@ -177,8 +179,7 @@ const firebaseConfig = {
             { amount: "15%", code: "GAME15" },
             { amount: "🎯 20% JACKPOT!", code: "GAME20" },
           ];
-          const selected =
-            discounts[Math.floor(Math.random() * discounts.length)];
+          const selected = discounts[Math.floor(Math.random() * discounts.length)];
           discountText.textContent = `You won ${selected.amount} OFF!`;
           codeText.textContent = `Use Code: ${selected.code}`;
 
@@ -188,12 +189,8 @@ const firebaseConfig = {
           const whatsappLink = `https://wa.me/918139095325?text=${message}`;
           button.setAttribute("href", whatsappLink);
 
-          localStorage.setItem("hasScanned", "true");
-          setCookie("claimed", "true", 365);
-          sessionStorage.setItem(ip, "true");
-
           if (window.saveDeviceDetails) {
-            window.saveDeviceDetails(ip, selected.code);
+            await window.saveDeviceDetails(ip, selected.code);
           }
 
           launchConfetti();
