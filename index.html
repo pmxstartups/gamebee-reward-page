@@ -1,23 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gamebee Scratch & Win</title>
-  
-  <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-LRKLRFBT0V"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-LRKLRFBT0V');
-  </script>
+<body>
+  <canvas id="confetti-canvas"></canvas>
+  <div class="card" id="reward-card">
+    <h2 id="title">🎉 Gamebee Scratch & Win!</h2>
 
-  <!-- FingerprintJS -->
-  <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+    <!-- Reward initially hidden -->
+    <div id="reward" class="reward" style="display:none;"></div>
 
-  <!-- Firebase -->
+    <!-- Step 1: Scratch Button -->
+    <button class="btn" id="scratch-btn">Scratch Now 🎯</button>
+
+    <!-- Step 2: Countdown before reveal -->
+    <p id="countdown" class="message" style="display:none; color:#000;"></p>
+
+    <!-- Step 3: WhatsApp Share button (hidden at start) -->
+    <a href="#" class="btn" id="btn" style="display:none;">Share on WhatsApp</a>
+
+    <p id="message" class="message">Screenshot and send it to us 📸</p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
@@ -36,16 +37,13 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Analytics fix (no top-level await)
     (async () => {
-      if (await isSupported()) {
-        getAnalytics(app);
-      }
+      if (await isSupported()) getAnalytics(app);
     })();
 
     const fpPromise = FingerprintJS.load();
 
-    (async function () {
+    document.getElementById('scratch-btn').addEventListener('click', async () => {
       const fp = await fpPromise;
       const result = await fp.get();
       const visitorId = result.visitorId;
@@ -57,113 +55,66 @@
       const titleText = document.getElementById('title');
       const messageText = document.getElementById('message');
       const button = document.getElementById('btn');
+      const scratchBtn = document.getElementById('scratch-btn');
+      const countdown = document.getElementById('countdown');
 
       if (docSnap.exists()) {
         // Already played
         rewardText.textContent = '';
         button.style.display = 'none';
+        scratchBtn.style.display = 'none';
         titleText.textContent = '👀 One Time Only!';
         messageText.textContent = 'Sorry, you can scratch only once per week!';
       } else {
-        // Weekly Scratch & Win Offers
-        const offers = [
-          "🎮 1 Free PS5 Game Session",
-          "🔥 15% OFF This Week",
-          "⭐ 20% OFF Jackpot!",
-          "🎁 Free Extra Controller",
-          "⚡ ₹100 OFF on Next Rental"
-        ];
-        const selected = offers[Math.floor(Math.random() * offers.length)];
+        // Start suspense countdown
+        scratchBtn.style.display = 'none';
+        countdown.style.display = 'block';
 
-        rewardText.textContent = selected;
+        let timer = 3;
+        countdown.textContent = `⏳ Revealing in ${timer}...`;
 
-        const message = encodeURIComponent(
-          `🎉 I just won "${selected}" in Gamebee's Scratch & Win! 🕹️🔥`
-        );
-        const whatsappLink = `https://wa.me/918139095325?text=${message}`;
-        button.setAttribute('href', whatsappLink);
+        const interval = setInterval(() => {
+          timer--;
+          countdown.textContent = `⏳ Revealing in ${timer}...`;
+          if (timer === 0) {
+            clearInterval(interval);
+            countdown.style.display = 'none';
 
-        // Save claim in Firestore
-        await setDoc(docRef, {
-          reward: selected,
-          timestamp: new Date().toISOString()
-        });
+            // Reveal reward
+            const offers = [
+              "🎮 Free PS5 extension for half day",
+              "🔥 10% OFF your next booking",
+              "⭐ Free Payasam",
+              "🎁 Free Extra Controller",
+              "⚡ Free Game Enjoy",
+              "💸 Rs 100 OFF on current booking"
+            ];
+            const selected = offers[Math.floor(Math.random() * offers.length)];
+            rewardText.textContent = selected;
+            rewardText.style.display = 'block';
 
-        // Fire confetti 🎉
-        confetti({
-          particleCount: 120,
-          spread: 80,
-          origin: { y: 0.6 },
-          colors: ['#ffca28', '#000000', '#ffc107', '#fdd835']
-        });
+            const message = encodeURIComponent(
+              `🎉 I just won "${selected}" in Gamebee's Scratch & Win! 🕹️🔥`
+            );
+            button.setAttribute('href', `https://wa.me/918139095325?text=${message}`);
+            button.style.display = 'inline-block';
+
+            // Save claim
+            setDoc(docRef, {
+              reward: selected,
+              timestamp: new Date().toISOString()
+            });
+
+            // Fire confetti
+            confetti({
+              particleCount: 120,
+              spread: 80,
+              origin: { y: 0.6 },
+              colors: ['#ffca28', '#000000', '#ffc107', '#fdd835']
+            });
+          }
+        }, 1000);
       }
-    })();
+    });
   </script>
-
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background: linear-gradient(135deg, #fff8e1, #ffe082);
-      padding: 2rem;
-    }
-    .card {
-      background: #fff;
-      padding: 2rem;
-      border-radius: 1rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      max-width: 400px;
-      margin: auto;
-    }
-    .reward {
-      font-size: 2rem;
-      background: -webkit-linear-gradient(#ff9800, #ffca28);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      font-weight: bold;
-      margin: 1rem 0;
-    }
-    .btn {
-      margin-top: 2rem;
-      background: #ffca28;
-      color: #000;
-      padding: 0.8rem 1.2rem;
-      border: none;
-      border-radius: 0.5rem;
-      font-weight: bold;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-block;
-      transition: all 0.3s ease;
-    }
-    .btn:hover {
-      background: linear-gradient(135deg, #ffca28, #ffc107);
-      transform: scale(1.05);
-    }
-    .message {
-      font-size: 1.1rem;
-      color: #e53935;
-      font-weight: bold;
-      margin-top: 1rem;
-    }
-    canvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      pointer-events: none;
-      z-index: 9999;
-    }
-  </style>
-</head>
-<body>
-  <canvas id="confetti-canvas"></canvas>
-  <div class="card" id="reward-card">
-    <h2 id="title">🎉 Gamebee Scratch & Win!</h2>
-    <div id="reward" class="reward"></div>
-    <a href="#" class="btn" id="btn">Share on WhatsApp</a>
-    <p id="message" class="message">Screenshot and send it to us 📸</p>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 </body>
-</html>
